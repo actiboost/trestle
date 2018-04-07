@@ -3,7 +3,7 @@ module Trestle
     module ActiveRecordAdapter
       def collection(params={})
         if params.include?(:filter)
-          model.where(JSON.parse(URI::decode(params[:filter]))
+          model.where(JSON.parse(URI::decode(params[:filter])))
         else
           model.all
         end
