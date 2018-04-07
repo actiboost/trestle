@@ -2,7 +2,11 @@ module Trestle
   module Adapters
     module ActiveRecordAdapter
       def collection(params={})
-        model.all
+        if params.include?(:filter)
+          model.where(JSON.parse(URI::decode(params[:filter]))
+        else
+          model.all
+        end
       end
 
       def find_instance(params)
