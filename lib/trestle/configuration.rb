@@ -16,6 +16,9 @@ module Trestle
     # Text shown in the admin page footer
     option :footer, -> { I18n.t("trestle.footer", default: "Powered by Trestle") }
 
+    # Default timestamp precision
+    option :timestamp_precision, :minutes
+
 
     ## Mounting Options
 
@@ -28,8 +31,11 @@ module Trestle
 
     ## Navigation Options
 
+    # Path to consider the application root (for title links and breadcrumbs)
+    option :root, -> { Trestle.config.path }
+
     # Initial breadcrumbs to display in the breadcrumb trail
-    option :root_breadcrumbs, -> { [Trestle::Breadcrumb.new(I18n.t("admin.breadcrumbs.home", default: "Home"), Trestle.config.path)] }
+    option :root_breadcrumbs, -> { [Trestle::Breadcrumb.new(I18n.t("admin.breadcrumbs.home", default: "Home"), Trestle.config.root)] }
 
     # Default icon class to use when it is not explicitly provided
     option :default_navigation_icon, "fa fa-arrow-circle-o-right"
@@ -78,14 +84,14 @@ module Trestle
     option :hooks, Hash.new { |h, k| h[k] = [] }
 
     # Register an extension hook
-    def hook(name, &block)
-      hooks[name.to_s] << block
+    def hook(name, options={}, &block)
+      hooks[name.to_s] << Hook.new(name.to_s, options, &block)
     end
 
     # List of i18n keys to pass into the Trestle.i18n JavaScript object
     option :javascript_i18n_keys, [
-      "admin.confirmation.title", "admin.confirmation.delete", "admin.confirmation.cancel", "trestle.dialog.error", "admin.buttons.ok",
-      "admin.datepicker.formats.date", "admin.datepicker.formats.datetime", "admin.datepicker.formats.time"
+      "trestle.confirmation.title", "trestle.confirmation.delete", "trestle.confirmation.cancel", "trestle.dialog.error",
+      "admin.buttons.ok", "admin.datepicker.formats.date", "admin.datepicker.formats.datetime", "admin.datepicker.formats.time"
     ]
 
     # List of load paths for where to find admin definitions

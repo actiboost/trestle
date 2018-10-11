@@ -32,9 +32,9 @@ module Trestle
         if options[:header]
           options[:header]
         elsif table.admin
-          table.admin.human_attribute_name(field)
+          table.admin.t("table.headers.#{field}", default: table.admin.human_attribute_name(field))
         else
-          field.to_s.humanize.titleize
+          I18n.t("admin.table.headers.#{field}", default: field.to_s.humanize.titleize)
         end
       end
 
@@ -49,10 +49,29 @@ module Trestle
           @template.content_tag(:td, content(instance), class: classes, data: data)
         end
 
-        def header
-          return if options.has_key?(:header) && options[:header].in?([nil, false])
+        def render?
+          if options.key?(:if)
+            if options[:if].respond_to?(:call)
+              @template.instance_exec(&options[:if])
+            else
+              options[:if]
+            end
+          elsif options.key?(:unless)
+            if options[:unless].respond_to?(:call)
+              !@template.instance_exec(&options[:unless])
+            else
+              !options[:unless]
+            end
+          else
+            true
+          end
+        end
 
-          header = I18n.t("admin.table.headers.#{@column.field}", default: @column.header)
+        def header
+          return if options.key?(:header) && options[:header].in?([nil, false])
+
+          header = @column.header
+          header = @template.instance_exec(&header) if header.respond_to?(:call)
           header = @template.sort_link(header, @column.sort_field, @column.sort_options) if @column.sortable?
           header
         end

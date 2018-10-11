@@ -18,6 +18,7 @@ module Trestle
   autoload :Configuration
   autoload :Display
   autoload :Form
+  autoload :Hook
   autoload :ModelName
   autoload :Navigation
   autoload :Options
@@ -26,6 +27,7 @@ module Trestle
   autoload :Scope
   autoload :Tab
   autoload :Table
+  autoload :Toolbar
 
   mattr_accessor :admins
   self.admins = {}

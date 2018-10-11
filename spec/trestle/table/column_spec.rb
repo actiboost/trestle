@@ -43,12 +43,72 @@ describe Trestle::Table::Column do
   describe "#renderer" do
     subject(:renderer) { column.renderer(template) }
 
-    describe "#header" do
-      let(:options) { { header: "Custom Header", sort: false } }
+    describe "#render?" do
+      it "returns true by default" do
+        expect(renderer.render?).to be true
+      end
 
-      it "returns the header based on the internationalized field name" do
-        expect(I18n).to receive(:t).with("admin.table.headers.my_field", default: "Custom Header").and_return("Custom Header")
-        expect(renderer.header).to eq("Custom Header")
+      context "with options[:if] set to a boolean" do
+        let(:options) { { if: false } }
+
+        it "returns the value of options[:if]" do
+          expect(renderer.render?).to be false
+        end
+      end
+
+      context "with options[:if] set to a proc" do
+        let(:options) { { if: -> { result } } }
+
+        it "evaluates the proc in the context of the template and returns the result" do
+          expect(template).to receive(:result).and_return(true)
+          expect(renderer.render?).to be true
+        end
+      end
+
+      context "with options[:unless] set to a boolean" do
+        let(:options) { { unless: true } }
+
+        it "returns the negated value of options[:unless]" do
+          expect(renderer.render?).to be false
+        end
+      end
+
+      context "with options[:unless] set to a proc" do
+        let(:options) { { unless: -> { result } } }
+
+        it "evaluates the proc in the context of the template and returns the negated result" do
+          expect(template).to receive(:result).and_return(true)
+          expect(renderer.render?).to be false
+        end
+      end
+    end
+
+    describe "#header" do
+      context "with options[:header] set" do
+        let(:options) { { header: "Custom Header", sort: false } }
+
+        it "uses options[:header] as the field name" do
+          expect(renderer.header).to eq("Custom Header")
+        end
+      end
+
+      context "with options[:header] as a proc" do
+        let(:header_proc) { Proc.new { "From proc" } }
+        let(:options) { { header: header_proc, sort: false }}
+
+        it "evaluates the header proc in the context of the template" do
+          expect(template).to receive(:instance_exec) { |&b| expect(b).to be(header_proc) }.and_return("From proc")
+          expect(renderer.header).to eq("From proc")
+        end
+      end
+
+      context "with options[:header] unset" do
+        let(:options) { { sort: false } }
+
+        it "returns the header based on the internationalized field name" do
+          expect(I18n).to receive(:t).with("admin.table.headers.my_field", default: "My Field").and_return("My Field")
+          expect(renderer.header).to eq("My Field")
+        end
       end
     end
 

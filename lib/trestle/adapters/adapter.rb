@@ -4,8 +4,9 @@ module Trestle
       attr_reader :admin
       delegate :model, to: :admin
 
-      def initialize(admin)
+      def initialize(admin, context=nil)
         @admin = admin
+        @context = context
       end
 
       # Loads the initial collection for use by the index action.
@@ -46,18 +47,20 @@ module Trestle
       # Saves an instance (used by the create and update actions).
       #
       # instance - The instance to save
+      # params   - Unfiltered params hash from the controller
       #
       # Returns a boolean indicating the success/fail status of the save.
-      def save_instance(instance)
+      def save_instance(instance, params={})
         raise NotImplementedError
       end
 
       # Deletes an instance (used by the destroy action).
       #
       # instance - The instance to delete
+      # params   - Unfiltered params hash from the controller
       #
       # Returns a boolean indicating the success/fail status of the deletion.
-      def delete_instance(instance)
+      def delete_instance(instance, params={})
         raise NotImplementedError
       end
 
@@ -133,10 +136,10 @@ module Trestle
       #
       # Returns a Kaminari-compatible scope corresponding to a single page.
       def paginate(collection, params)
-        collection = Kaminari.paginate_array(collection.to_a) unless collection.respond_to?(:page)
+        collection = Kaminari.paginate_array(collection.to_a) unless collection.respond_to?(Kaminari.config.page_method_name)
         per_page = admin.pagination_options[:per]
 
-        collection.page(params[:page]).per(per_page)
+        collection.public_send(Kaminari.config.page_method_name, params[:page]).per(per_page)
       end
 
       # Filters the submitted form parameters and returns a whitelisted attributes 'hash'
@@ -149,7 +152,7 @@ module Trestle
       #
       # Returns the permitted set of parameters as a ActionController::Parameters object.
       def permitted_params(params)
-        params.require(admin.admin_name.singularize).permit!
+        params.require(admin.parameter_name).permit!
       end
 
       # Produces a human-readable name for a given attribute, applying I18n where appropriate.
@@ -175,6 +178,23 @@ module Trestle
       # Returns an Array of Trestle::Attribute and/or Trestle::Attribute::Association objects.
       def default_form_attributes
         raise NotImplementedError
+      end
+
+    protected
+      # Missing methods are called on the given context if available.
+      #
+      # We include private methods as methods such as current_user
+      # are usually declared as private or protected.
+      def method_missing(name, *args, &block)
+        if @context && @context.respond_to?(name, true)
+          @context.send(name, *args, &block)
+        else
+          super
+        end
+      end
+
+      def respond_to_missing?(name, include_private=false)
+        (@context && @context.respond_to?(name, true)) || super
       end
     end
   end

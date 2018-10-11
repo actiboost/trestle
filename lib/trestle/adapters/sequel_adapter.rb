@@ -26,11 +26,11 @@ module Trestle
         instance.set(attrs)
       end
 
-      def save_instance(instance)
+      def save_instance(instance, params={})
         instance.save
       end
 
-      def delete_instance(instance)
+      def delete_instance(instance, params={})
         instance.destroy
       end
 

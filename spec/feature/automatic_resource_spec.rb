@@ -4,12 +4,12 @@ feature 'Automatic resources' do
   scenario 'index' do
     create_test_post
 
-    visit '/admin/posts'
+    visit '/admin/automatic'
     expect(page).to have_content "First Post"
   end
 
   scenario 'new record' do
-    visit '/admin/posts'
+    visit '/admin/automatic'
     click_link "New Post"
 
     fill_in "Title", with: "Post Title"
@@ -18,13 +18,13 @@ feature 'Automatic resources' do
     click_button "Save Post"
 
     expect(page).to have_content("The post was successfully created.")
-    expect(page).to have_current_path(/\/admin\/posts\/\d+/)
+    expect(page).to have_current_path(/\/admin\/automatic\/\d+/)
   end
 
   scenario 'update record' do
     create_test_post
 
-    visit '/admin/posts'
+    visit '/admin/automatic'
     click_link "1"
 
     fill_in "Title", with: "Updated Title"
@@ -36,7 +36,7 @@ feature 'Automatic resources' do
   scenario 'delete record' do
     create_test_post
 
-    visit '/admin/posts'
+    visit '/admin/automatic'
     within('tbody tr:first .actions') { click_link }
 
     expect(page).to have_content("The post was successfully deleted.")

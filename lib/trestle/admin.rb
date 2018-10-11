@@ -5,6 +5,25 @@ module Trestle
     autoload :Builder
     autoload :Controller
 
+    delegate :to_param, to: :class
+
+    def initialize(context=nil)
+      @context = context
+    end
+
+    # Delegate all missing methods to corresponding class method if available
+    def method_missing(name, *args, &block)
+      if self.class.respond_to?(name)
+        self.class.send(name, *args, &block)
+      else
+        super
+      end
+    end
+
+    def respond_to_missing?(name, include_private=false)
+      self.class.respond_to?(name, include_private) || super
+    end
+
     class << self
       attr_accessor :menu
 
@@ -46,11 +65,31 @@ module Trestle
       end
 
       def default_breadcrumb
-        Breadcrumb.new(I18n.t("admin.breadcrumbs.#{admin_name}", default: admin_name.titleize), path)
+        Breadcrumb.new(human_admin_name, path)
       end
 
       def admin_name
         name.underscore.sub(/_admin$/, '')
+      end
+
+      def i18n_key
+        admin_name
+      end
+
+      def human_admin_name
+        I18n.t("admin.breadcrumbs.#{i18n_key}", default: name.demodulize.underscore.sub(/_admin$/, '').titleize)
+      end
+
+      def translate(key, options={})
+        defaults = [:"admin.#{i18n_key}.#{key}", :"admin.#{key}"]
+        defaults << options[:default] if options[:default]
+
+        I18n.t(defaults.shift, options.merge(default: defaults))
+      end
+      alias t translate
+
+      def parameter_name
+        admin_name.singularize
       end
 
       def route_name
@@ -65,12 +104,20 @@ module Trestle
         "#{name.underscore}/admin"
       end
 
-      def path(action=:index, options={})
+      def path(action=root_action, options={})
         Engine.routes.url_for(options.merge(controller: controller_namespace, action: action, only_path: true))
+      end
+
+      def to_param(*)
+        raise NoMethodError, "#to_param called on non-resourceful admin. You may need to explicitly specify the admin."
       end
 
       def actions
         [:index]
+      end
+
+      def root_action
+        :index
       end
 
       def routes
@@ -91,6 +138,10 @@ module Trestle
 
       def build(&block)
         Admin::Builder.build(self, &block)
+      end
+
+      def validate!
+        # No validations by default. This can be overridden in subclasses.
       end
     end
   end

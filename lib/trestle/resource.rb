@@ -2,9 +2,12 @@ module Trestle
   class Resource < Admin
     extend ActiveSupport::Autoload
 
+    autoload :AdapterMethods
     autoload :Builder
     autoload :Collection
     autoload :Controller
+
+    include AdapterMethods
 
     RESOURCE_ACTIONS = [:index, :show, :new, :create, :edit, :update, :destroy]
     READONLY_ACTIONS = [:index, :show]
@@ -14,61 +17,43 @@ module Trestle
     class_attribute :pagination_options
     self.pagination_options = {}
 
+    # Collection-focused adapter methods
+    adapter_method :collection
+    adapter_method :merge_scopes
+    adapter_method :sort
+    adapter_method :paginate
+    adapter_method :finalize_collection
+    adapter_method :decorate_collection
+    adapter_method :count
+
+    # Instance-focused adapter methods
+    adapter_method :find_instance
+    adapter_method :build_instance
+    adapter_method :update_instance
+    adapter_method :save_instance
+    adapter_method :delete_instance
+    adapter_method :permitted_params
+
+    # Common adapter methods
+    adapter_method :to_param
+    adapter_method :human_attribute_name
+
+    # Automatic tables and forms adapter methods
+    adapter_method :default_table_attributes
+    adapter_method :default_form_attributes
+
+    # Prepares a collection for use in the resource controller's index action.
+    #
+    # Applies scopes, sorts, pagination, finalization and decorators according
+    # to the admin's adapter and any admin-specific adapter methods.
+    def prepare_collection(params, options={})
+      Collection.new(self, options).prepare(params)
+    end
+
     class << self
-      def adapter
-        @adapter ||= Trestle.config.default_adapter.new(self)
-      end
-
-      def adapter=(klass)
-        @adapter = klass.new(self)
-      end
-
-      # Defines a method that can be overridden with a custom block,
-      # but is otherwise delegated to the adapter instance.
-      def self.adapter_method(name)
-        block_method = :"#{name}_block"
-        attr_accessor block_method
-
-        define_method(name) do |*args|
-          if override = public_send(block_method)
-            instance_exec(*args, &override)
-          else
-            adapter.public_send(name, *args)
-          end
-        end
-      end
-
-      # Collection-focused adapter methods
-      adapter_method :collection
-      adapter_method :merge_scopes
-      adapter_method :sort
-      adapter_method :paginate
-      adapter_method :finalize_collection
-      adapter_method :decorate_collection
-      adapter_method :count
-
-      # Instance-focused adapter methods
-      adapter_method :find_instance
-      adapter_method :build_instance
-      adapter_method :update_instance
-      adapter_method :save_instance
-      adapter_method :delete_instance
-      adapter_method :permitted_params
-
-      # Common adapter methods
-      adapter_method :to_param
-      adapter_method :human_attribute_name
-
-      # Automatic tables and forms adapter methods
-      adapter_method :default_table_attributes
-      adapter_method :default_form_attributes
-
-      def prepare_collection(params)
-        Collection.new(self).prepare(params)
-      end
-
-      def initialize_collection(params)
-        collection(params)
+      # Deprecated: use instance method instead
+      def prepare_collection(params, options={})
+        Collection.new(self, options).prepare(params)
       end
 
       def scopes
@@ -99,19 +84,48 @@ module Trestle
         @actions ||= (readonly? ? READONLY_ACTIONS : RESOURCE_ACTIONS).dup
       end
 
+      def root_action
+        singular? ? :show : :index
+      end
+
       def readonly?
         options[:readonly]
       end
 
-      def default_breadcrumb
-        Breadcrumb.new(I18n.t("admin.breadcrumbs.#{admin_name}", default: model_name.plural.titleize), path)
+      def singular?
+        options[:singular]
+      end
+
+      def translate(key, options={})
+        super(key, options.merge({
+          model_name:            model_name.titleize,
+          lowercase_model_name:  model_name.downcase,
+          pluralized_model_name: model_name.plural.titleize
+        }))
+      end
+      alias t translate
+
+      def instance_path(instance, options={})
+        action = options.fetch(:action) { :show }
+        options = options.merge(id: to_param(instance)) unless singular?
+
+        path(action, options)
       end
 
       def routes
         admin = self
 
+        resource_method  = singular? ? :resource : :resources
+        resource_name    = admin_name
+        resource_options = {
+          controller: controller_namespace,
+          as:         route_name,
+          path:       options[:path],
+          except:     (RESOURCE_ACTIONS - actions)
+        }
+
         Proc.new do
-          resources admin.admin_name, controller: admin.controller_namespace, as: admin.route_name, path: admin.options[:path], except: (RESOURCE_ACTIONS - admin.actions) do
+          public_send(resource_method, resource_name, resource_options) do
             instance_exec(&admin.additional_routes) if admin.additional_routes
           end
         end
@@ -123,6 +137,12 @@ module Trestle
 
       def build(&block)
         Resource::Builder.build(self, &block)
+      end
+
+      def validate!
+        if singular? && !adapter_methods.method_defined?(:find_instance)
+          raise NotImplementedError, "Singular resources must define an instance block."
+        end
       end
 
     private

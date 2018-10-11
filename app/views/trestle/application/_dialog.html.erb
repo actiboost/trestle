@@ -4,7 +4,7 @@
 </div>
 
 <div class="modal-flash">
-  <%= render "flash" %>
+  <%= render "trestle/flash/flash" %>
 </div>
 
 <div class="modal-tabs">
@@ -22,15 +22,13 @@
 </div>
 
 <div class="modal-footer">
-  <% if content_for?(:secondary_toolbar) %>
-    <div class="btn-toolbar secondary-toolbar">
-      <%= content_for(:secondary_toolbar) %>
-    </div>
-  <% end %>
+  <div class="btn-toolbar secondary-toolbar">
+    <%= render_toolbar(toolbar(:secondary)) %>
+    <%= deprecated_toolbar(:secondary) %>
+  </div>
 
-  <% if content_for?(:primary_toolbar) %>
-    <div class="btn-toolbar primary-toolbar">
-      <%= content_for(:primary_toolbar) %>
-    </div>
-  <% end %>
+  <div class="btn-toolbar primary-toolbar">
+    <%= render_toolbar(toolbar(:primary)) %>
+    <%= deprecated_toolbar(:primary) %>
+  </div>
 </div>

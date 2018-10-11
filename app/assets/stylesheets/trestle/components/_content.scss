@@ -1,38 +1,32 @@
 .content-header {
-  @extend .clearfix;
+  display: flex;
+  justify-content: space-between;
+
   background: $content-header-background;
-  padding: 5px 20px;
+  padding: 20px;
 
   h1 {
     font-weight: 300;
+    margin-top: 0;
+  }
+
+  .breadcrumb {
+    margin-bottom: 0;
+  }
+
+  .content-header-title {
+    margin: 5px 0;
   }
 
   .btn-toolbar {
-    @extend .pull-right;
-    clear: right;
-  }
-
-  .primary-toolbar {
-    margin-top: 16px;
-
-    .btn {
-      @extend .btn-lg;
-      font-size: 20px;
-      padding: 8px 16px;
-      border-radius: $border-radius-base;
-    }
+    text-align: right;
   }
 
   .secondary-toolbar {
     margin-top: 8px;
 
-    .btn {
-      font-size: 12px;
-      padding: 4px 10px;
-
-      i {
-        font-size: 11px;
-      }
+    @include mobile {
+      margin-top: 6px;
     }
   }
 }
@@ -57,6 +51,26 @@
 
   flex: 1;
   min-width: 0;
+}
+
+.main-content-header,
+.main-content-footer {
+  display: flex;
+  justify-content: space-between;
+}
+
+.main-content-header {
+  margin: -20px -20px 20px !important;
+  padding: $main-content-header-padding;
+  background: $main-content-header-background;
+  border-bottom: $main-content-header-border;
+}
+
+.main-content-footer {
+  margin: 20px -20px -20px !important;
+  padding: $main-content-footer-padding;
+  background: $main-content-footer-background;
+  border-top: $main-content-footer-border;
 }
 
 .main-content,
@@ -84,7 +98,7 @@
 
 @include mobile {
   .content-header {
-    padding: 0 10px;
+    padding: 10px;
   }
 
   .main-content-area {
@@ -104,5 +118,23 @@
   .main-content,
   .main-content-sidebar {
     padding: 15px;
+  }
+
+  .main-content-header,
+  .main-content-footer {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .main-content-header {
+    margin: -15px -15px 15px !important;
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+
+  .main-content-footer {
+    margin: 15px -15px -15px !important;
+    padding-left: 15px;
+    padding-right: 15px;
   }
 }

@@ -1,8 +1,7 @@
 require 'spec_helper'
 
-describe Trestle::Admin::Builder do
+describe Trestle::Admin::Builder, remove_const: true do
   before(:each) do
-    Object.send(:remove_const, :TestAdmin) if Object.const_defined?(:TestAdmin)
     stub_const("Trestle::ApplicationController", Class.new(ActionController::Base))
   end
 
@@ -14,7 +13,6 @@ describe Trestle::Admin::Builder do
   context "with a module scope" do
     before(:each) do
       module Scoped; end
-      Scoped.send(:remove_const, :TestAdmin) if Scoped.const_defined?(:TestAdmin)
     end
 
     it "creates the Admin subclass within the module scope" do
@@ -158,6 +156,14 @@ describe Trestle::Admin::Builder do
       end
 
       expect(::TestAdmin.breadcrumb).to eq(b)
+    end
+
+    it "allows the breadcrumb to be disabled" do
+      Trestle::Admin::Builder.create(:test) do
+        breadcrumb false
+      end
+
+      expect(::TestAdmin.breadcrumb).to be_nil
     end
   end
 end

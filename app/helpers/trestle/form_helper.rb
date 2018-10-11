@@ -2,10 +2,10 @@ module Trestle
   module FormHelper
     def trestle_form_for(instance, options={}, &block)
       options[:builder] ||= Form::Builder
-      options[:as] ||= admin.admin_name.singularize
+      options[:as] ||= admin.parameter_name
 
       options[:data] ||= {}
-      options[:data].merge!(remote: true, type: :html, behavior: "trestle-form", turbolinks: false)
+      options[:data].reverse_merge!(remote: true, type: :html, behavior: "trestle-form", turbolinks: false)
 
       form_for(instance, options) do |f|
         with_form(f) { yield f }
@@ -21,10 +21,6 @@ module Trestle
 
     def form
       @_trestle_form
-    end
-
-    def toolbar(name, &block)
-      content_for(:"#{name}_toolbar", &block)
     end
 
     def sidebar(&block)
